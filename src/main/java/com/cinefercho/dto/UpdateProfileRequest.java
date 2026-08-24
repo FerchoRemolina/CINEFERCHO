@@ -1,16 +1,16 @@
 package com.cinefercho.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record RegisterRequest(
+public record UpdateProfileRequest(
         @NotBlank @Size(max = 150) String fullName,
-        @NotBlank @Email @Size(max = 180) String email,
         @NotBlank
         @Pattern(regexp = "\\d{6,10}", message = "La cédula debe tener entre 6 y 10 dígitos")
         String nationalId,
-        @NotBlank @Size(min = 8, max = 72) String password
+        @Size(max = 20)
+        @Pattern(regexp = "^$|^\\d{7,10}$", message = "El teléfono debe tener entre 7 y 10 dígitos")
+        String phone
 ) {
 }

@@ -2,7 +2,10 @@ package com.cinefercho.controller;
 
 import com.cinefercho.dto.CreatePurchaseRequest;
 import com.cinefercho.dto.InvoiceResponse;
+import com.cinefercho.dto.UpdateProfileRequest;
+import com.cinefercho.dto.UserResponse;
 import com.cinefercho.security.UserPrincipal;
+import com.cinefercho.service.AuthService;
 import com.cinefercho.service.PurchaseService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -23,9 +27,23 @@ import java.util.List;
 public class ClientController {
 
     private final PurchaseService purchaseService;
+    private final AuthService authService;
 
-    public ClientController(PurchaseService purchaseService) {
+    public ClientController(PurchaseService purchaseService, AuthService authService) {
         this.purchaseService = purchaseService;
+        this.authService = authService;
+    }
+
+    @GetMapping("/me")
+    public UserResponse me(@AuthenticationPrincipal UserPrincipal principal) {
+        return authService.me(principal);
+    }
+
+    @PutMapping("/profile")
+    public UserResponse updateProfile(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return authService.updateProfile(principal, request);
     }
 
     @PostMapping("/purchases")

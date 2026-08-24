@@ -30,6 +30,7 @@ cinefercho:
   jwt:
     secret: CineferchoJwtSecretKeyForHS256AlgorithmMustBeLongEnough2026!
     expiration-ms: 86400000
+    client-expiration-ms: 120000
 
 # --- PostgreSQL (producción / staging) ---
 # spring:

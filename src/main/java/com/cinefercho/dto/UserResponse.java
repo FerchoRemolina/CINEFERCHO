@@ -5,8 +5,7 @@ import com.cinefercho.entity.enums.UserRole;
 
 import java.time.Instant;
 
-public record AuthResponse(
-        String token,
+public record UserResponse(
         Long id,
         String fullName,
         String email,
@@ -15,7 +14,6 @@ public record AuthResponse(
         UserRole role,
         MembershipType membershipType,
         Instant membershipExpiresAt,
-        boolean membershipActive,
-        Instant sessionExpiresAt
+        boolean membershipActive
 ) {
 }

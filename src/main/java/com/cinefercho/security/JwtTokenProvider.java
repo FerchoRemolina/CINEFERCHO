@@ -1,6 +1,7 @@
 package com.cinefercho.security;
 
 import com.cinefercho.entity.User;
+import com.cinefercho.entity.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -21,7 +22,14 @@ public class JwtTokenProvider {
         this.jwtProperties = jwtProperties;
     }
 
-    public String generateToken(UserPrincipal principal) {
+    public Instant issueExpiresAt(UserRole role) {
+        long ttl = role == UserRole.ROLE_CLIENT
+                ? jwtProperties.clientExpirationMs()
+                : jwtProperties.expirationMs();
+        return Instant.now().plusMillis(ttl);
+    }
+
+    public String generateToken(UserPrincipal principal, Instant expiresAt) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(principal.getUsername())
@@ -30,13 +38,21 @@ public class JwtTokenProvider {
                 .claim("role", principal.getRole().name())
                 .claim("membershipType", principal.getMembershipType().name())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusMillis(jwtProperties.expirationMs())))
+                .expiration(Date.from(expiresAt))
                 .signWith(signingKey())
                 .compact();
     }
 
+    public String generateToken(User user, Instant expiresAt) {
+        return generateToken(UserPrincipal.from(user), expiresAt);
+    }
+
+    public String generateToken(UserPrincipal principal) {
+        return generateToken(principal, issueExpiresAt(principal.getRole()));
+    }
+
     public String generateToken(User user) {
-        return generateToken(UserPrincipal.from(user));
+        return generateToken(user, issueExpiresAt(user.getRole()));
     }
 
     public boolean validateToken(String token) {

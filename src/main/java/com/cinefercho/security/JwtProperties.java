@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "cinefercho.jwt")
 public record JwtProperties(
         @NotBlank String secret,
-        @Positive long expirationMs
+        @Positive long expirationMs,
+        @Positive long clientExpirationMs
 ) {
 }
