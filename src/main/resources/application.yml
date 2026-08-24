@@ -1,13 +1,8 @@
 spring:
   application:
     name: cinefercho
-
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/cineferchodb}
-    username: ${SPRING_DATASOURCE_USERNAME:cinefercho}
-    password: ${SPRING_DATASOURCE_PASSWORD:cinefercho}
-    driver-class-name: org.postgresql.Driver
-
+  profiles:
+    default: h2
   jpa:
     open-in-view: false
     hibernate:
