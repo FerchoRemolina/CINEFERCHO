@@ -8,6 +8,7 @@ target/
 .project
 .settings/
 .vscode/
+.cursor/
 *.log
 .DS_Store
 Thumbs.db
