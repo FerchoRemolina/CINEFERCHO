@@ -6,14 +6,19 @@ import com.cinefercho.dto.MovieRequest;
 import com.cinefercho.dto.MovieResponse;
 import com.cinefercho.dto.ProductRequest;
 import com.cinefercho.dto.ProductResponse;
+import com.cinefercho.dto.RecurringScreeningRequest;
+import com.cinefercho.dto.RecurringScreeningResponse;
 import com.cinefercho.dto.ScreeningRequest;
 import com.cinefercho.dto.ScreeningResponse;
+import com.cinefercho.dto.TheaterResponse;
 import com.cinefercho.entity.CinemaHall;
 import com.cinefercho.entity.Movie;
 import com.cinefercho.entity.Product;
 import com.cinefercho.entity.Screening;
 import com.cinefercho.entity.Theater;
+import com.cinefercho.entity.enums.MovieStatus;
 import com.cinefercho.exception.ResourceNotFoundException;
+import com.cinefercho.exception.ScheduleOverlapException;
 import com.cinefercho.mapper.CatalogMapper;
 import com.cinefercho.repository.CinemaHallRepository;
 import com.cinefercho.repository.ConcessionItemRepository;
@@ -26,7 +31,11 @@ import com.cinefercho.util.SeatFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Transactional
@@ -60,29 +69,42 @@ public class AdminService {
         this.catalogMapper = catalogMapper;
     }
 
+    @Transactional(readOnly = true)
+    public List<MovieResponse> findMovies() {
+        return catalogMapper.toMovieResponses(movieRepository.findAll());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ScreeningResponse> findScreenings() {
+        return catalogMapper.toScreeningResponses(screeningRepository.findAllDetailed());
+    }
+
+    @Transactional(readOnly = true)
+    public List<CinemaHallResponse> findHalls() {
+        return cinemaHallRepository.findAllDetailed().stream()
+                .map(catalogMapper::toHallResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TheaterResponse> findTheaters() {
+        return catalogMapper.toTheaterResponses(theaterRepository.findAllDetailed());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductResponse> findProducts() {
+        return catalogMapper.toProductResponses(productRepository.findAll());
+    }
+
     public MovieResponse createMovie(MovieRequest request) {
-        Movie movie = Movie.builder()
-                .title(request.title())
-                .synopsis(request.synopsis())
-                .durationMinutes(request.durationMinutes())
-                .genre(request.genre())
-                .rating(request.rating())
-                .posterUrl(request.posterUrl())
-                .status(request.status())
-                .build();
+        Movie movie = applyMovie(Movie.builder().build(), request);
         return catalogMapper.toResponse(movieRepository.save(movie));
     }
 
     public MovieResponse updateMovie(Long id, MovieRequest request) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la película con id " + id));
-        movie.setTitle(request.title());
-        movie.setSynopsis(request.synopsis());
-        movie.setDurationMinutes(request.durationMinutes());
-        movie.setGenre(request.genre());
-        movie.setRating(request.rating());
-        movie.setPosterUrl(request.posterUrl());
-        movie.setStatus(request.status());
+        applyMovie(movie, request);
         return catalogMapper.toResponse(movieRepository.save(movie));
     }
 
@@ -101,16 +123,55 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la película con id " + request.movieId()));
         CinemaHall hall = cinemaHallRepository.findDetailedById(request.hallId())
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la sala con id " + request.hallId()));
+        LocalDateTime endTime = resolveEndTime(request, movie);
+        assertNoHallOverlap(hall.getId(), request.startTime(), endTime, null);
         Screening screening = Screening.builder()
                 .movie(movie)
                 .hall(hall)
                 .startTime(request.startTime())
-                .endTime(resolveEndTime(request, movie))
+                .endTime(endTime)
                 .ticketPrice(request.ticketPrice())
                 .format(request.format())
                 .build();
         Screening saved = screeningRepository.save(screening);
         return catalogMapper.toResponse(saved);
+    }
+
+    public RecurringScreeningResponse createRecurringScreenings(RecurringScreeningRequest request) {
+        Movie movie = movieRepository.findById(request.movieId())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe la película con id " + request.movieId()));
+        CinemaHall hall = cinemaHallRepository.findDetailedById(request.hallId())
+                .orElseThrow(() -> new ResourceNotFoundException("No existe la sala con id " + request.hallId()));
+        List<LocalDate> dates = request.dates().stream().distinct().sorted().toList();
+        if (dates.isEmpty()) {
+            throw new IllegalArgumentException("Selecciona al menos un día para programar la función.");
+        }
+        DateTimeFormatter dateLabel = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' uuuu")
+                .withLocale(java.util.Locale.forLanguageTag("es-CO"));
+        List<LocalDateTime> starts = new ArrayList<>();
+        for (LocalDate date : dates) {
+            LocalDateTime startTime = date.atTime(request.startTime());
+            LocalDateTime endTime = startTime.plusMinutes(movie.getDurationMinutes());
+            if (screeningRepository.existsHallOverlap(hall.getId(), startTime, endTime, null)) {
+                throw new ScheduleOverlapException(
+                        "La sala ya tiene una función que coincide con el horario indicado el "
+                                + date.format(dateLabel) + ".");
+            }
+            starts.add(startTime);
+        }
+        List<ScreeningResponse> created = new ArrayList<>();
+        for (LocalDateTime startTime : starts) {
+            Screening screening = Screening.builder()
+                    .movie(movie)
+                    .hall(hall)
+                    .startTime(startTime)
+                    .endTime(startTime.plusMinutes(movie.getDurationMinutes()))
+                    .ticketPrice(request.ticketPrice())
+                    .format(request.format())
+                    .build();
+            created.add(catalogMapper.toResponse(screeningRepository.save(screening)));
+        }
+        return new RecurringScreeningResponse(created.size(), created);
     }
 
     public ScreeningResponse updateScreening(Long id, ScreeningRequest request) {
@@ -120,10 +181,12 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la película con id " + request.movieId()));
         CinemaHall hall = cinemaHallRepository.findDetailedById(request.hallId())
                 .orElseThrow(() -> new ResourceNotFoundException("No existe la sala con id " + request.hallId()));
+        LocalDateTime endTime = resolveEndTime(request, movie);
+        assertNoHallOverlap(hall.getId(), request.startTime(), endTime, id);
         screening.setMovie(movie);
         screening.setHall(hall);
         screening.setStartTime(request.startTime());
-        screening.setEndTime(resolveEndTime(request, movie));
+        screening.setEndTime(endTime);
         screening.setTicketPrice(request.ticketPrice());
         screening.setFormat(request.format());
         return catalogMapper.toResponse(screeningRepository.save(screening));
@@ -209,6 +272,29 @@ public class AdminService {
         product.setStock(request.stock());
         product.setImageUrl(request.imageUrl());
         return product;
+    }
+
+    private Movie applyMovie(Movie movie, MovieRequest request) {
+        movie.setTitle(request.title());
+        movie.setDescription(request.description());
+        movie.setDurationMinutes(request.durationMinutes());
+        movie.setGenre(request.genre());
+        movie.setAgeRating(request.ageRating());
+        movie.setPosterUrl(request.posterUrl());
+        movie.setFormat(request.format());
+        movie.setReleaseDate(request.releaseDate());
+        movie.setStatus(request.status() != null ? request.status() : MovieStatus.COMING_SOON);
+        return movie;
+    }
+
+    private void assertNoHallOverlap(Long hallId, LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
+        if (!endTime.isAfter(startTime)) {
+            throw new IllegalArgumentException("La hora de fin debe ser posterior a la hora de inicio.");
+        }
+        if (screeningRepository.existsHallOverlap(hallId, startTime, endTime, excludeId)) {
+            throw new ScheduleOverlapException(
+                    "La sala ya tiene una función que coincide con el horario indicado.");
+        }
     }
 
     private LocalDateTime resolveEndTime(ScreeningRequest request, Movie movie) {

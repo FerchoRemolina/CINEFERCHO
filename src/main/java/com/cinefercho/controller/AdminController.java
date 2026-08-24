@@ -6,13 +6,17 @@ import com.cinefercho.dto.MovieRequest;
 import com.cinefercho.dto.MovieResponse;
 import com.cinefercho.dto.ProductRequest;
 import com.cinefercho.dto.ProductResponse;
+import com.cinefercho.dto.RecurringScreeningRequest;
+import com.cinefercho.dto.RecurringScreeningResponse;
 import com.cinefercho.dto.ScreeningRequest;
 import com.cinefercho.dto.ScreeningResponse;
+import com.cinefercho.dto.TheaterResponse;
 import com.cinefercho.service.AdminService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -30,6 +36,31 @@ public class AdminController {
 
     public AdminController(AdminService adminService) {
         this.adminService = adminService;
+    }
+
+    @GetMapping("/movies")
+    public List<MovieResponse> movies() {
+        return adminService.findMovies();
+    }
+
+    @GetMapping("/screenings")
+    public List<ScreeningResponse> screenings() {
+        return adminService.findScreenings();
+    }
+
+    @GetMapping("/halls")
+    public List<CinemaHallResponse> halls() {
+        return adminService.findHalls();
+    }
+
+    @GetMapping("/theaters")
+    public List<TheaterResponse> theaters() {
+        return adminService.findTheaters();
+    }
+
+    @GetMapping("/products")
+    public List<ProductResponse> products() {
+        return adminService.findProducts();
     }
 
     @PostMapping("/movies")
@@ -53,6 +84,13 @@ public class AdminController {
     @ResponseStatus(HttpStatus.CREATED)
     public ScreeningResponse createScreening(@Valid @RequestBody ScreeningRequest request) {
         return adminService.createScreening(request);
+    }
+
+    @PostMapping("/screenings/recurring")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RecurringScreeningResponse createRecurringScreenings(
+            @Valid @RequestBody RecurringScreeningRequest request) {
+        return adminService.createRecurringScreenings(request);
     }
 
     @PutMapping("/screenings/{id}")
