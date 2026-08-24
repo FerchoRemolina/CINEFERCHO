@@ -3,25 +3,19 @@ spring:
     name: cinefercho
 
   datasource:
-    url: jdbc:h2:mem:cineferchodb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/cineferchodb}
+    username: ${SPRING_DATASOURCE_USERNAME:cinefercho}
+    password: ${SPRING_DATASOURCE_PASSWORD:cinefercho}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
-    database-platform: org.hibernate.dialect.H2Dialect
 
 server:
   port: 8080
@@ -31,20 +25,3 @@ cinefercho:
     secret: CineferchoJwtSecretKeyForHS256AlgorithmMustBeLongEnough2026!
     expiration-ms: 86400000
     client-expiration-ms: 120000
-
-# --- PostgreSQL (producción / staging) ---
-# spring:
-#   datasource:
-#     url: jdbc:postgresql://localhost:5432/cineferchodb
-#     username: cinefercho
-#     password: cinefercho
-#     driver-class-name: org.postgresql.Driver
-#   jpa:
-#     hibernate:
-#       ddl-auto: validate
-#     properties:
-#       hibernate:
-#         dialect: org.hibernate.dialect.PostgreSQLDialect
-#   h2:
-#     console:
-#       enabled: false

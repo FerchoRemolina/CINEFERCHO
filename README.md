@@ -12,12 +12,33 @@ Hay dos aplicaciones:
 - JDK 21
 - Node.js 20 o superior
 - Maven Wrapper incluido (`mvnw` / `mvnw.cmd`)
+- PostgreSQL 16 o superior (ya puedes usar el servicio local)
 
-En desarrollo usa H2 en memoria. No hace falta instalar PostgreSQL para probarlo.
+La API usa PostgreSQL (`cineferchodb` en `localhost:5432`). Los datos se conservan al reiniciar. El seed (admin, cines, películas) solo corre si la base está vacía.
 
 ## Cómo correrlo
 
-### 1. Backend
+### 1. Base de datos
+
+Crea usuario y base **una sola vez** (pide la clave del superusuario `postgres`):
+
+```powershell
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -U postgres -f scripts\init-db.sql
+```
+
+Si PostgreSQL está en otra ruta o versión, abre pgAdmin y ejecuta el mismo SQL de `scripts/init-db.sql`.
+
+Por defecto la API conecta a `localhost:5432` con usuario y clave `cinefercho`. Si el usuario o la base ya existen, ignora el error. Con Docker: `docker compose up -d`.
+
+Si usas otras credenciales:
+
+```powershell
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/cineferchodb"
+$env:SPRING_DATASOURCE_USERNAME = "postgres"
+$env:SPRING_DATASOURCE_PASSWORD = "tu_clave"
+```
+
+### 2. Backend
 
 En la raíz del proyecto:
 
@@ -32,10 +53,9 @@ $env:JAVA_HOME = "C:\Program Files\Java\jdk-21"
 ./mvnw -DskipTests spring-boot:run
 ```
 
-La API queda en `http://localhost:8080/api/v1`.  
-Consola H2: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:mem:cineferchodb`).
+La API queda en `http://localhost:8080/api/v1`.
 
-### 2. Frontend
+### 3. Frontend
 
 ```bash
 cd cinefercho-web

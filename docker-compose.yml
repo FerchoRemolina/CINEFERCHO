@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cinefercho-db
+    environment:
+      POSTGRES_DB: cineferchodb
+      POSTGRES_USER: cinefercho
+      POSTGRES_PASSWORD: cinefercho
+    ports:
+      - "5432:5432"
+    volumes:
+      - cinefercho_pgdata:/var/lib/postgresql/data
+
+volumes:
+  cinefercho_pgdata:
