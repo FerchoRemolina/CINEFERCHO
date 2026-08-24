@@ -10,6 +10,7 @@ import com.cinefercho.entity.Theater;
 import com.cinefercho.entity.User;
 import com.cinefercho.entity.enums.HallType;
 import com.cinefercho.entity.enums.MembershipType;
+import com.cinefercho.entity.enums.MovieFormat;
 import com.cinefercho.entity.enums.MovieStatus;
 import com.cinefercho.entity.enums.ProductCategory;
 import com.cinefercho.entity.enums.ScreeningFormat;
@@ -91,16 +92,10 @@ public class DataInitializer implements CommandLineRunner {
         userRepository.save(User.builder()
                 .fullName("Administrador Cinefercho")
                 .email("admin@cinefercho.com")
+                .nationalId("1234567890")
                 .password(passwordEncoder.encode("admin123"))
                 .role(UserRole.ROLE_ADMIN)
                 .membershipType(MembershipType.NONE)
-                .build());
-        userRepository.save(User.builder()
-                .fullName("Cliente Demo")
-                .email("cliente@gmail.com")
-                .password(passwordEncoder.encode("cliente123"))
-                .role(UserRole.ROLE_CLIENT)
-                .membershipType(MembershipType.CINE_FAN_GOLD)
                 .build());
     }
 
@@ -142,30 +137,37 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private List<Movie> seedMovies() {
+        LocalDate today = LocalDate.now();
         Movie dune = movieRepository.save(Movie.builder()
                 .title("Dune: Part Two")
-                .synopsis("Paul Atreides se une a los Fremen y busca venganza contra los conspiradores que destruyeron a su familia, mientras intenta evitar un futuro oscuro.")
+                .description("Paul Atreides se une a los Fremen y busca venganza contra los conspiradores que destruyeron a su familia, mientras intenta evitar un futuro oscuro.")
                 .durationMinutes(166)
                 .genre("Ciencia ficción")
-                .rating("PG-13")
+                .ageRating("PG-13")
+                .format(MovieFormat.TWO_D)
+                .releaseDate(today.minusDays(30))
                 .posterUrl("https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg")
                 .status(MovieStatus.NOW_SHOWING)
                 .build());
         Movie insideOut = movieRepository.save(Movie.builder()
                 .title("Inside Out 2")
-                .synopsis("Riley entra a la adolescencia y nuevas emociones llegan a su mente, desafiando el equilibrio de Alegría, Tristeza, Furia, Miedo y Desagrado.")
+                .description("Riley entra a la adolescencia y nuevas emociones llegan a su mente, desafiando el equilibrio de Alegría, Tristeza, Furia, Miedo y Desagrado.")
                 .durationMinutes(96)
                 .genre("Animación")
-                .rating("PG")
+                .ageRating("PG")
+                .format(MovieFormat.THREE_D)
+                .releaseDate(today.plusDays(7))
                 .posterUrl("https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg")
-                .status(MovieStatus.NOW_SHOWING)
+                .status(MovieStatus.COMING_SOON)
                 .build());
         Movie wicked = movieRepository.save(Movie.builder()
                 .title("Wicked")
-                .synopsis("La historia no contada de Elphaba, una joven incomprendida por su piel verde, y su amistad con Glinda en la Tierra de Oz.")
+                .description("La historia no contada de Elphaba, una joven incomprendida por su piel verde, y su amistad con Glinda en la Tierra de Oz.")
                 .durationMinutes(160)
                 .genre("Musical")
-                .rating("PG")
+                .ageRating("PG")
+                .format(MovieFormat.XD)
+                .releaseDate(today.plusDays(40))
                 .posterUrl("https://image.tmdb.org/t/p/w500/c5Tqxeo1UpBvnAc3csUm7j3dzTE.jpg")
                 .status(MovieStatus.COMING_SOON)
                 .build());
@@ -178,16 +180,19 @@ public class DataInitializer implements CommandLineRunner {
         List<CinemaHall> atlantisHalls = atlantis.getHalls();
         List<CinemaHall> venturaHalls = ventura.getHalls();
         LocalDate today = LocalDate.now();
-        LocalDate tomorrow = today.plusDays(1);
+        LocalDate premiereInsideOut = movies.get(1).getReleaseDate();
+        LocalDate premiereWicked = movies.get(2).getReleaseDate();
 
+        screeningRepository.save(buildScreening(
+                movies.get(0), atlantisHalls.get(0), today.minusDays(1).atTime(18, 0), ScreeningFormat.STANDARD_2D, "18000"));
         screeningRepository.save(buildScreening(
                 movies.get(0), atlantisHalls.get(0), today.atTime(16, 0), ScreeningFormat.STANDARD_2D, "18000"));
         screeningRepository.save(buildScreening(
                 movies.get(0), atlantisHalls.get(4), today.atTime(19, 30), ScreeningFormat.XD_2D, "25000"));
         screeningRepository.save(buildScreening(
-                movies.get(1), venturaHalls.get(0), tomorrow.atTime(17, 0), ScreeningFormat.STANDARD_3D, "20000"));
+                movies.get(1), venturaHalls.get(0), premiereInsideOut.atTime(17, 0), ScreeningFormat.STANDARD_3D, "20000"));
         screeningRepository.save(buildScreening(
-                movies.get(2), atlantisHalls.get(6), tomorrow.atTime(20, 15), ScreeningFormat.D_BOX, "32000"));
+                movies.get(2), atlantisHalls.get(6), premiereWicked.atTime(20, 15), ScreeningFormat.D_BOX, "32000"));
     }
 
     private Screening buildScreening(
@@ -239,14 +244,16 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedMembershipPlans() {
         membershipPlanRepository.save(MembershipPlan.builder()
-                .name("CINE_FAN")
+                .name("GOLD")
                 .monthlyPrice(new BigDecimal("24900"))
+                .durationDays(365)
                 .discountPercentageTickets(new BigDecimal("10.00"))
                 .discountPercentageConcession(new BigDecimal("10.00"))
                 .build());
         membershipPlanRepository.save(MembershipPlan.builder()
-                .name("CINE_FAN_GOLD")
+                .name("PRO")
                 .monthlyPrice(new BigDecimal("44900"))
+                .durationDays(30)
                 .discountPercentageTickets(new BigDecimal("20.00"))
                 .discountPercentageConcession(new BigDecimal("20.00"))
                 .build());

@@ -25,7 +25,10 @@ public record InvoiceResponse(
             Long id,
             String fullName,
             String email,
-            MembershipType membershipType
+            String nationalId,
+            MembershipType membershipType,
+            Instant membershipExpiresAt,
+            boolean membershipActive
     ) {
     }
 

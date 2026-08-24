@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -41,6 +42,10 @@ public class MembershipPlan {
     @DecimalMin("0.00")
     @Column(name = "monthly_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal monthlyPrice;
+
+    @Min(1)
+    @Column(name = "duration_days", nullable = false)
+    private int durationDays;
 
     @NotNull
     @DecimalMin("0.00")
