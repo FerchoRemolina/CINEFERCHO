@@ -23,4 +23,11 @@ public interface TheaterRepository extends JpaRepository<Theater, Long> {
             where t.id = :id
             """)
     Optional<Theater> findDetailedById(@Param("id") Long id);
+
+    @Query("""
+            select t from Theater t
+            join fetch t.city
+            order by t.city.name, t.name
+            """)
+    List<Theater> findAllDetailed();
 }

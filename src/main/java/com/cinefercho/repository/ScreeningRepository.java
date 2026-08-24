@@ -22,9 +22,55 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
             """)
     Optional<Screening> findDetailedById(@Param("id") Long id);
 
+    @Query("""
+            select s from Screening s
+            join fetch s.movie
+            join fetch s.hall h
+            join fetch h.theater t
+            join fetch t.city
+            order by s.startTime
+            """)
+    List<Screening> findAllDetailed();
+
     boolean existsByMovie_Id(Long movieId);
 
     boolean existsByHall_Id(Long hallId);
+
+    boolean existsByMovie_IdAndStartTimeBefore(Long movieId, LocalDateTime time);
+
+    @Query("""
+            select s from Screening s
+            join fetch s.hall h
+            join fetch h.theater
+            where s.movie.id = :movieId
+            order by s.startTime
+            """)
+    List<Screening> findByMovieIdWithHall(@Param("movieId") Long movieId);
+
+    @Query("""
+            select s from Screening s
+            join fetch s.hall h
+            join fetch h.theater
+            where s.movie.id = :movieId
+              and h.theater.id = :theaterId
+            order by s.startTime
+            """)
+    List<Screening> findByMovieIdAndTheaterIdWithHall(
+            @Param("movieId") Long movieId,
+            @Param("theaterId") Long theaterId);
+
+    @Query("""
+            select (count(s) > 0) from Screening s
+            where s.hall.id = :hallId
+              and (:excludeId is null or s.id <> :excludeId)
+              and s.startTime < :endTime
+              and s.endTime > :startTime
+            """)
+    boolean existsHallOverlap(
+            @Param("hallId") Long hallId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("excludeId") Long excludeId);
 
     @Query("""
             select s from Screening s

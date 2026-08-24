@@ -1,5 +1,6 @@
 package com.cinefercho.entity;
 
+import com.cinefercho.entity.enums.MovieFormat;
 import com.cinefercho.entity.enums.MovieStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -21,6 +22,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,7 +45,7 @@ public class Movie {
     private String title;
 
     @Column(columnDefinition = "TEXT")
-    private String synopsis;
+    private String description;
 
     @Min(1)
     @Column(name = "duration_minutes", nullable = false)
@@ -54,12 +56,21 @@ public class Movie {
     private String genre;
 
     @Size(max = 20)
-    @Column(length = 20)
-    private String rating;
+    @Column(name = "age_rating", length = 20)
+    private String ageRating;
 
     @Size(max = 500)
     @Column(name = "poster_url", length = 500)
     private String posterUrl;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MovieFormat format;
+
+    @NotNull
+    @Column(name = "release_date", nullable = false)
+    private LocalDate releaseDate;
 
     @NotNull
     @Enumerated(EnumType.STRING)

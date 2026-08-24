@@ -3,9 +3,11 @@ package com.cinefercho.mapper;
 import com.cinefercho.dto.CinemaHallResponse;
 import com.cinefercho.dto.CityResponse;
 import com.cinefercho.dto.MembershipPlanResponse;
+import com.cinefercho.dto.MovieCatalogResponse;
 import com.cinefercho.dto.MovieResponse;
 import com.cinefercho.dto.ProductResponse;
 import com.cinefercho.dto.ScreeningResponse;
+import com.cinefercho.dto.ScreeningSlotResponse;
 import com.cinefercho.dto.TheaterResponse;
 import com.cinefercho.entity.CinemaHall;
 import com.cinefercho.entity.City;
@@ -16,6 +18,8 @@ import com.cinefercho.entity.Screening;
 import com.cinefercho.entity.Theater;
 import org.springframework.stereotype.Component;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @Component
@@ -43,19 +47,75 @@ public class CatalogMapper {
     }
 
     public MovieResponse toResponse(Movie movie) {
+        return toResponse(movie, List.of());
+    }
+
+    public MovieResponse toResponse(Movie movie, List<CinemaHallResponse> halls) {
         return new MovieResponse(
                 movie.getId(),
+                movie.getPosterUrl(),
                 movie.getTitle(),
-                movie.getSynopsis(),
+                movie.getDescription(),
+                movie.getAgeRating(),
+                movie.getFormat(),
+                movie.getReleaseDate(),
                 movie.getDurationMinutes(),
                 movie.getGenre(),
-                movie.getRating(),
-                movie.getPosterUrl(),
-                movie.getStatus());
+                movie.getStatus(),
+                halls);
     }
 
     public List<MovieResponse> toMovieResponses(List<Movie> movies) {
         return movies.stream().map(this::toResponse).toList();
+    }
+
+    public MovieCatalogResponse toCatalogResponse(
+            Movie movie,
+            List<CinemaHallResponse> halls,
+            List<ScreeningSlotResponse> screenings,
+            boolean ticketsEnabled) {
+        return new MovieCatalogResponse(
+                movie.getId(),
+                movie.getPosterUrl(),
+                movie.getTitle(),
+                movie.getDescription(),
+                movie.getAgeRating(),
+                movie.getFormat(),
+                movie.getReleaseDate(),
+                movie.getDurationMinutes(),
+                movie.getGenre(),
+                halls,
+                screenings,
+                ticketsEnabled);
+    }
+
+    public ScreeningSlotResponse toSlotResponse(Screening screening) {
+        CinemaHall hall = screening.getHall();
+        Theater theater = hall.getTheater();
+        return new ScreeningSlotResponse(
+                screening.getId(),
+                theater.getId(),
+                theater.getName(),
+                hall.getId(),
+                hall.getName(),
+                hall.getHallType(),
+                screening.getStartTime(),
+                screening.getEndTime(),
+                screening.getTicketPrice(),
+                screening.getFormat());
+    }
+
+    public List<CinemaHallResponse> toDistinctHallResponses(List<Screening> screenings) {
+        return screenings.stream()
+                .sorted(Comparator.comparing(Screening::getStartTime))
+                .map(Screening::getHall)
+                .collect(
+                        () -> new LinkedHashMap<Long, CinemaHallResponse>(),
+                        (map, hall) -> map.putIfAbsent(hall.getId(), toHallResponse(hall)),
+                        LinkedHashMap::putAll)
+                .values()
+                .stream()
+                .toList();
     }
 
     public ScreeningResponse toResponse(Screening screening) {
@@ -99,6 +159,8 @@ public class CatalogMapper {
                 plan.getId(),
                 plan.getName(),
                 plan.getMonthlyPrice(),
+                plan.getDurationDays(),
+                durationLabel(plan.getDurationDays()),
                 plan.getDiscountPercentageTickets(),
                 plan.getDiscountPercentageConcession());
     }
@@ -118,5 +180,15 @@ public class CatalogMapper {
                 hall.getTotalCapacity(),
                 hall.getTotalRows(),
                 hall.getTotalColumns());
+    }
+
+    private String durationLabel(int durationDays) {
+        if (durationDays >= 365) {
+            return "1 año desde el día de la compra";
+        }
+        if (durationDays == 30 || durationDays == 31) {
+            return "1 mes desde el día de la compra";
+        }
+        return durationDays + " días desde el día de la compra";
     }
 }

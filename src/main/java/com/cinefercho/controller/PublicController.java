@@ -2,6 +2,7 @@ package com.cinefercho.controller;
 
 import com.cinefercho.dto.CityResponse;
 import com.cinefercho.dto.MembershipPlanResponse;
+import com.cinefercho.dto.MovieCatalogResponse;
 import com.cinefercho.dto.MovieResponse;
 import com.cinefercho.dto.ProductResponse;
 import com.cinefercho.dto.ScreeningResponse;
@@ -47,6 +48,21 @@ public class PublicController {
     @GetMapping("/movies")
     public List<MovieResponse> movies(@RequestParam(required = false) MovieStatus status) {
         return catalogService.findMovies(status);
+    }
+
+    @GetMapping("/movies/now-showing")
+    public List<MovieCatalogResponse> nowShowing(@RequestParam(required = false) Long theaterId) {
+        return catalogService.findNowShowing(theaterId);
+    }
+
+    @GetMapping("/movies/presale")
+    public List<MovieCatalogResponse> presale(@RequestParam(required = false) Long theaterId) {
+        return catalogService.findPresale(theaterId);
+    }
+
+    @GetMapping("/movies/upcoming")
+    public List<MovieCatalogResponse> upcoming(@RequestParam(required = false) Long theaterId) {
+        return catalogService.findUpcoming(theaterId);
     }
 
     @GetMapping("/screenings")

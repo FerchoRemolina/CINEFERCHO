@@ -26,6 +26,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ScheduleOverlapException.class)
+    public ResponseEntity<ErrorResponse> handleScheduleOverlap(
+            ScheduleOverlapException ex, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(SeatAlreadyReservedException.class)
     public ResponseEntity<ErrorResponse> handleSeatReserved(
             SeatAlreadyReservedException ex, HttpServletRequest request) {

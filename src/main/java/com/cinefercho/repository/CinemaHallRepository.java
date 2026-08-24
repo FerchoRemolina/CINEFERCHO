@@ -19,4 +19,12 @@ public interface CinemaHallRepository extends JpaRepository<CinemaHall, Long> {
             where h.id = :id
             """)
     Optional<CinemaHall> findDetailedById(@Param("id") Long id);
+
+    @Query("""
+            select h from CinemaHall h
+            join fetch h.theater t
+            join fetch t.city
+            order by t.name, h.name
+            """)
+    List<CinemaHall> findAllDetailed();
 }

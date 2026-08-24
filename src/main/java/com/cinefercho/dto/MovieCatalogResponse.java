@@ -1,12 +1,11 @@
 package com.cinefercho.dto;
 
 import com.cinefercho.entity.enums.MovieFormat;
-import com.cinefercho.entity.enums.MovieStatus;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public record MovieResponse(
+public record MovieCatalogResponse(
         Long id,
         String posterUrl,
         String title,
@@ -16,7 +15,8 @@ public record MovieResponse(
         LocalDate releaseDate,
         int durationMinutes,
         String genre,
-        MovieStatus status,
-        List<CinemaHallResponse> halls
+        List<CinemaHallResponse> halls,
+        List<ScreeningSlotResponse> screenings,
+        boolean ticketsEnabled
 ) {
 }
