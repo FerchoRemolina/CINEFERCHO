@@ -1,12 +1,13 @@
 package com.cinefercho;
 
+import com.cinefercho.config.TmdbProperties;
 import com.cinefercho.security.JwtProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, TmdbProperties.class})
 public class CineferchoApplication {
 
     public static void main(String[] args) {

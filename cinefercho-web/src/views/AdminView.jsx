@@ -79,6 +79,11 @@ export default function AdminView() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tmdbQuery, setTmdbQuery] = useState("");
+  const [tmdbResults, setTmdbResults] = useState([]);
+  const [tmdbEnabled, setTmdbEnabled] = useState(true);
+  const [tmdbSearching, setTmdbSearching] = useState(false);
+  const [tmdbOpen, setTmdbOpen] = useState(false);
 
   const load = async () => {
     const [{ data: movieData }, { data: screeningData }, { data: hallData }, { data: productData }] =
@@ -101,6 +106,49 @@ export default function AdminView() {
   const flash = (text, isError = false) => {
     setError(isError ? text : "");
     setMessage(isError ? "" : text);
+  };
+
+  const searchTmdb = async (event) => {
+    event.preventDefault();
+    const query = tmdbQuery.trim();
+    if (!query) {
+      flash("Escribe un título para buscar en TMDB.", true);
+      return;
+    }
+    setTmdbSearching(true);
+    try {
+      const { data } = await adminApi.searchTmdb(query);
+      setTmdbEnabled(data.enabled !== false);
+      setTmdbResults(data.results || []);
+      setTmdbOpen(true);
+      if (data.enabled === false) {
+        flash("TMDB no está configurado. Puedes crear la película a mano.", true);
+      } else if (!(data.results || []).length) {
+        flash("TMDB no devolvió coincidencias. Completa el formulario manualmente.", true);
+      } else {
+        flash("");
+      }
+    } catch {
+      setTmdbResults([]);
+      setTmdbOpen(false);
+      flash("No se pudo consultar TMDB. Crea la película a mano.", true);
+    } finally {
+      setTmdbSearching(false);
+    }
+  };
+
+  const applyTmdbMovie = (movie) => {
+    setMovieForm((current) => ({
+      ...current,
+      title: movie.title || current.title,
+      description: movie.overview || current.description,
+      posterUrl: movie.posterUrl || current.posterUrl,
+      releaseDate: movie.releaseDate || current.releaseDate,
+      ageRating: current.ageRating || "PG-13",
+      durationMinutes: current.durationMinutes || 120,
+    }));
+    setTmdbOpen(false);
+    flash(`Datos de “${movie.title}” cargados. Revisa formato y fecha de estreno.`);
   };
 
   const submitMovie = async (event) => {
@@ -253,6 +301,69 @@ export default function AdminView() {
 
       {section === "movies" && (
         <div className="grid grid-cols-[0.9fr_1.1fr] gap-8">
+          <div className="space-y-4">
+            <form
+              onSubmit={searchTmdb}
+              className="space-y-3 rounded-2xl border border-gold/30 bg-cinema-panel p-6"
+            >
+              <h2 className="font-display text-xl">🔍 Autocompletar con TMDB</h2>
+              <p className="text-xs text-zinc-400">
+                Busca un título para rellenar sinopsis y póster. Sala, formato de función y precio se
+                asignan al programar la función.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={tmdbQuery}
+                  onChange={(event) => setTmdbQuery(event.target.value)}
+                  placeholder="Ej. Dune, Intensamente..."
+                  className="flex-1 rounded-xl border border-white/10 bg-cinema px-3 py-2 outline-none focus:border-gold"
+                />
+                <button
+                  type="submit"
+                  disabled={tmdbSearching}
+                  className="rounded-xl bg-gold px-4 py-2 font-semibold text-cinema disabled:opacity-60"
+                >
+                  {tmdbSearching ? "Buscando..." : "Buscar"}
+                </button>
+              </div>
+              {!tmdbEnabled && (
+                <p className="text-xs text-amber-300">
+                  La API key de TMDB no está configurada. El formulario manual sigue disponible.
+                </p>
+              )}
+              {tmdbOpen && tmdbResults.length > 0 && (
+                <ul className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-white/10 p-2">
+                  {tmdbResults.map((movie) => (
+                    <li key={movie.id}>
+                      <button
+                        type="button"
+                        onClick={() => applyTmdbMovie(movie)}
+                        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-white/5"
+                      >
+                        {movie.posterUrl ? (
+                          <img
+                            src={movie.posterUrl}
+                            alt=""
+                            className="h-16 w-11 rounded object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-16 w-11 items-center justify-center rounded bg-cinema text-xs text-zinc-500">
+                            N/A
+                          </span>
+                        )}
+                        <span>
+                          <span className="block font-semibold">{movie.title}</span>
+                          <span className="text-xs text-zinc-400">
+                            {(movie.releaseDate || "").slice(0, 4) || "Sin año"}
+                            {movie.voteAverage != null ? ` · ${Number(movie.voteAverage).toFixed(1)}` : ""}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </form>
           <form onSubmit={submitMovie} className="space-y-3 rounded-2xl border border-white/10 bg-cinema-panel p-6">
             <h2 className="font-display text-2xl">
               {editingMovieId ? "Editar película" : "Nueva Descripción-Película"}
@@ -333,6 +444,7 @@ export default function AdminView() {
               </button>
             )}
           </form>
+          </div>
           <div className="space-y-3">
             {movies.map((movie) => (
               <article key={movie.id} className="flex gap-4 rounded-2xl border border-white/10 bg-cinema-panel p-4">

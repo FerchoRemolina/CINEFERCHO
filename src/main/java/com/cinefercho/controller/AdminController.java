@@ -11,7 +11,9 @@ import com.cinefercho.dto.RecurringScreeningResponse;
 import com.cinefercho.dto.ScreeningRequest;
 import com.cinefercho.dto.ScreeningResponse;
 import com.cinefercho.dto.TheaterResponse;
+import com.cinefercho.dto.TmdbSearchResponse;
 import com.cinefercho.service.AdminService;
+import com.cinefercho.service.TmdbService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,9 +36,16 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final TmdbService tmdbService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, TmdbService tmdbService) {
         this.adminService = adminService;
+        this.tmdbService = tmdbService;
+    }
+
+    @GetMapping("/tmdb/search")
+    public TmdbSearchResponse searchTmdb(@RequestParam(defaultValue = "") String query) {
+        return tmdbService.search(query);
     }
 
     @GetMapping("/movies")

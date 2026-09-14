@@ -20,3 +20,8 @@ cinefercho:
     secret: CineferchoJwtSecretKeyForHS256AlgorithmMustBeLongEnough2026!
     expiration-ms: 86400000
     client-expiration-ms: 120000
+
+tmdb:
+  api:
+    key: ${TMDB_API_KEY:}
+    url: https://api.themoviedb.org/3

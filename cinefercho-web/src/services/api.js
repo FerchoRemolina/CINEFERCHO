@@ -76,6 +76,7 @@ export const adminApi = {
   deleteScreening: (id) => api.delete(`/admin/screenings/${id}`),
   halls: () => api.get("/admin/halls"),
   theaters: () => api.get("/admin/theaters"),
+  searchTmdb: (query) => api.get("/admin/tmdb/search", { params: { query } }),
   products: () => api.get("/admin/products"),
   createProduct: (payload) => api.post("/admin/products", payload),
   updateProduct: (id, payload) => api.put(`/admin/products/${id}`, payload),

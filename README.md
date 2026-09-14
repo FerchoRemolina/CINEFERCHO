@@ -72,6 +72,18 @@ npm run dev
 
 Abre `http://localhost:5173`.
 
+### TMDB (opcional)
+
+En el dashboard el admin puede buscar un título y autocompletar sinopsis, póster y fecha. Sala, formato de función y precio se siguen asignando al programar la función.
+
+La clave no va en el código. En la **misma ventana** del backend, antes de `spring-boot:run`:
+
+```powershell
+$env:TMDB_API_KEY = "tu_clave"
+```
+
+Se obtiene en [themoviedb.org](https://www.themoviedb.org) (Settings → API). Si no está definida, el proyecto corre igual y el formulario manual no cambia.
+
 ## Cuentas de prueba
 
 Al arrancar se carga un administrador:
@@ -95,7 +107,7 @@ CINEFERCHO/
 
 - **Invitado:** ve cartelera, preventa, próximos y confitería.
 - **Cliente:** reserva asientos, compra boletos/confitería y puede adquirir membresía.
-- **Admin:** gestiona películas, funciones e inventario. Al entrar va al dashboard.
+- **Admin:** gestiona películas, funciones e inventario. Al entrar va al dashboard. Puede autocompletar fichas con TMDB si hay API key.
 
 ### Cartelera
 
@@ -138,3 +150,4 @@ El admin puede crear **una función** o un **rango de días** a la misma hora y 
 | Auth        | `/api/v1/auth/login`, `/register` |
 | Cliente     | `/api/v1/client/...`         |
 | Admin       | `/api/v1/admin/...`          |
+| TMDB        | `/api/v1/admin/tmdb/search`  |
